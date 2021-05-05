@@ -317,13 +317,22 @@ public class HttpConnector {
     initClients();
   }
 
-
   /**
    * Instantiates new http connector with samply configuration.
    *
    * @param config Samply Configuration
    */
   public HttpConnector(de.samply.common.config.Configuration config) {
+    this(config, true);
+  }
+
+  /**
+   * Instantiates new http connector with samply configuration
+   *
+   * @param config          Samply Configuration
+   * @param followRedirects if redirect must be performed or not
+   */
+  public HttpConnector(de.samply.common.config.Configuration config, boolean followRedirects) {
     customHeaders = new ArrayList<>();
     if (config != null && config.getProxy() != null) {
       if (config.getProxy().getHttp() != null
@@ -350,7 +359,7 @@ public class HttpConnector {
     // TODO: handle bypassproxy switch in combination with noproxyhost setting from common config
 
     credentialsProvider = initializeCredentialsProvider();
-    initClients();
+    initClients(followRedirects);
   }
 
   /**
@@ -380,7 +389,11 @@ public class HttpConnector {
    * Initializes the clients If no https proxy is configured, both clients are the same.
    */
   private void initClients() {
-    httpc = initializeCloseableHttpClient(PROTOCOL_HTTP);
+    initClients(true);
+  }
+
+  private void initClients(boolean followRedirects) {
+    httpc = initializeCloseableHttpClient(PROTOCOL_HTTP, followRedirects);
     if (httpProxyUrl == null && httpsProxyUrl == null) {
       httpsc = httpc;
     } else {
@@ -389,7 +402,7 @@ public class HttpConnector {
           && httpProxyUrl.equalsIgnoreCase(httpsProxyUrl)) {
         httpsc = httpc;
       } else {
-        httpsc = initializeCloseableHttpClient(PROTOCOL_HTTPS);
+        httpsc = initializeCloseableHttpClient(PROTOCOL_HTTPS, followRedirects);
       }
     }
   }
@@ -1075,10 +1088,12 @@ public class HttpConnector {
   /**
    * Initialize closeable http client.
    *
-   * @param protocol the protocol
+   * @param protocol        the protocol
+   * @param followRedirects if redirect must be performed or not
    * @return the closeable http client
    */
-  private CloseableHttpClient initializeCloseableHttpClient(String protocol) {
+  private CloseableHttpClient initializeCloseableHttpClient(String protocol,
+      boolean followRedirects) {
     if (userAgent != null && userAgent.length() > 0) {
       //logger.debug("Setting user agent header to: " + userAgent);
       Header header = new BasicHeader(HttpHeaders.USER_AGENT, userAgent);
@@ -1109,13 +1124,15 @@ public class HttpConnector {
         .build();
 
     HttpRoutePlanner routePlanner;
-    RequestConfig config = RequestConfig.DEFAULT;
+    RequestConfig.Builder configBuilder = RequestConfig.custom()
+        .setRedirectsEnabled(followRedirects);
     if (timeout > 0) {
-      config = RequestConfig.custom()
-          .setConnectTimeout(timeout * 1000)
+      configBuilder.setConnectTimeout(timeout * 1000)
           .setConnectionRequestTimeout(timeout * 1000)
-          .setSocketTimeout(timeout * 1000).build();
+          .setSocketTimeout(timeout * 1000);
     }
+    RequestConfig config = configBuilder.build();
+
     HttpHost proxy = (protocol.equalsIgnoreCase(PROTOCOL_HTTP)) ? getHttpProxy() : getHttpsProxy();
     if (proxy != null) {
       routePlanner = new DefaultProxyRoutePlanner(proxy) {
