@@ -327,7 +327,7 @@ public class HttpConnector {
   }
 
   /**
-   * Instantiates new http connector with samply configuration
+   * Instantiates new http connector with samply configuration.
    *
    * @param config          Samply Configuration
    * @param followRedirects if redirect must be performed or not
@@ -790,7 +790,9 @@ public class HttpConnector {
   }
 
 
-  /** Get an Jersey Client.
+  /**
+   * Get an Jersey Client.
+   *
    * @param httpClient the httpclient
    * @return httpclient
    * @see HttpConnector#getClient(CloseableHttpClient, Boolean) This client will fail on unknown
@@ -979,14 +981,18 @@ public class HttpConnector {
     initClients();
   }
 
-  /** Get the current User Agent.
+  /**
+   * Get the current User Agent.
+   *
    * @return the userAgent
    */
   public String getUserAgent() {
     return userAgent;
   }
 
-  /** Set the User Agent.
+  /**
+   * Set the User Agent.
+   *
    * @param userAgent the userAgent to set
    */
   public void setUserAgent(String userAgent) {
@@ -1303,6 +1309,7 @@ public class HttpConnector {
 
   /**
    * Add custom Header and init client.
+   *
    * @param customHeader the custom header
    */
   public void addCustomHeader(Header customHeader) {
