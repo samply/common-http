@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.2.0 - 2020-05-07]
+###Added
+- Following redirects can now be configured
+
 ## [7.1.1 - 2020-10-29]
 ###Changed
 - Google Style Code

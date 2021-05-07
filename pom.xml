@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>common-http</artifactId>
-    <version>7.1.2-SNAPSHOT</version>
+    <version>7.2.0-SNAPSHOT</version>
 
     <name>Samply Common Http library</name>
     <description>LIB to easily use both apache and jersey http connectors</description>
