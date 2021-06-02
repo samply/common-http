@@ -354,9 +354,12 @@ public class HttpConnector {
         httpsProxyUsername = config.getProxy().getHttps().getUsername();
         httpsProxyPassword = config.getProxy().getHttps().getPassword();
       }
-    }
 
-    // TODO: handle bypassproxy switch in combination with noproxyhost setting from common config
+      if (config.getProxy().getNoProxyHosts() != null
+          && !config.getProxy().getNoProxyHosts().getHost().isEmpty()) {
+        bypassProxyForPrivateNetworks = true;
+      }
+    }
 
     credentialsProvider = initializeCredentialsProvider();
     initClients(followRedirects);
@@ -379,8 +382,9 @@ public class HttpConnector {
     httpsProxyUsername = config.getHttps().getUsername();
     httpsProxyPassword = config.getHttps().getPassword();
 
-    // TODO: handle bypassproxy switch in combination with noproxyhost setting from common config
-
+    if (config.getNoProxyHosts() != null && !config.getNoProxyHosts().getHost().isEmpty()) {
+      bypassProxyForPrivateNetworks = true;
+    }
     credentialsProvider = initializeCredentialsProvider();
     initClients();
   }
