@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- HttpConnector now automatically enables proxyByPass for internal addresses then any "no proxy" host is set
+
 ## [7.2.0 - 2020-05-07]
 ###Added
 - Following redirects can now be configured
