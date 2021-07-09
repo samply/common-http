@@ -3,7 +3,9 @@
 
 name: Java CI with Maven
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ["master", "develop", "feature/automaticDeployment"]
 
 jobs:
   build:
@@ -11,12 +13,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Setup Java
-      uses: actions/setup-java@v1
+    - name: Checkout Sourcecode
+      uses: actions/checkout@v2
+    - name: Setup Java for publishing to Maven Central
+      uses: actions/setup-java@v2
       with:
         java-version: 8
-
+        distribution: 'adopt'
+        server-id: ossrh
+        # osshr sonatype jira user and password
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
+    - name: Install GPG Secret Key for signing the artifact
+      id: install-secret-key
+      run: |
+        cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+        gpg --list-secret-keys --keyid-format LONG
+    - name: Run the unit tests
+      run: mvn --batch-mode test
     - name: Build with Maven
-      run: mvn -B package
+      run: mvn -X --batch-mode -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} deploy
