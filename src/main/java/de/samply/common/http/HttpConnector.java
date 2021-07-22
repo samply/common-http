@@ -56,6 +56,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -167,12 +168,24 @@ public class HttpConnector {
   /**
    * The httpc.
    */
+  @Deprecated
   private CloseableHttpClient httpc;
 
   /**
    * The httpsc.
    */
+  @Deprecated
   private CloseableHttpClient httpsc;
+
+  /**
+   * The HttpClientBuilder used for http request.
+   */
+  private HttpClientBuilder httpClientBuilder;
+
+  /**
+   * The HttpClientBuilder used for https request.
+   */
+  private HttpClientBuilder httpsClientBuilder;
 
   /**
    * The User Agent String that will be sent with each request.
@@ -397,21 +410,22 @@ public class HttpConnector {
   }
 
   private void initClients(boolean followRedirects) {
-    httpc = initializeCloseableHttpClient(PROTOCOL_HTTP, followRedirects);
+    httpClientBuilder = initializeHttpClientBuilder(PROTOCOL_HTTP, followRedirects);
     if (httpProxyUrl == null && httpsProxyUrl == null) {
-      httpsc = httpc;
+      httpsClientBuilder = httpClientBuilder;
     } else {
       if (httpsProxyUrl == null
           || httpProxyPort.equalsIgnoreCase(httpsProxyPort)
           && httpProxyUrl.equalsIgnoreCase(httpsProxyUrl)) {
-        httpsc = httpc;
+        httpsClientBuilder = httpClientBuilder;
       } else {
-        httpsc = initializeCloseableHttpClient(PROTOCOL_HTTPS, followRedirects);
+        httpsClientBuilder = initializeHttpClientBuilder(PROTOCOL_HTTPS, followRedirects);
       }
     }
   }
 
   /**
+   * NOTE: Unsure about usage of this function, will it ever get called for example on shutdown?
    * Closes the clients.
    *
    * @throws IOException ioException
@@ -501,12 +515,12 @@ public class HttpConnector {
     }
 
     if (targetUrl.getProtocol().equalsIgnoreCase(PROTOCOL_HTTPS)) {
-      httpClient = httpsc;
+      httpClient = getHttpClientForHttps();
       if (preemptiveProxyAuthentication) {
         proxy = getHttpProxy();
       }
     } else {
-      httpClient = httpc;
+      httpClient = getHttpClientForHttp();
       if (preemptiveProxyAuthentication) {
         proxy = getHttpsProxy();
       }
@@ -1064,7 +1078,7 @@ public class HttpConnector {
    */
   @Deprecated
   public CloseableHttpClient getHttpc() {
-    return httpc;
+    return httpClientBuilder.build();
   }
 
   /**
@@ -1073,7 +1087,7 @@ public class HttpConnector {
    * @return CloseableHttpClient
    */
   public CloseableHttpClient getHttpClientForHttp() {
-    return httpc;
+    return httpClientBuilder.build();
   }
 
   /**
@@ -1083,7 +1097,7 @@ public class HttpConnector {
    */
   @Deprecated
   public CloseableHttpClient getHttpsc() {
-    return httpsc;
+    return httpsClientBuilder.build();
   }
 
   /**
@@ -1092,7 +1106,7 @@ public class HttpConnector {
    * @return CloseableHttpClient
    */
   public CloseableHttpClient getHttpClientForHttps() {
-    return httpsc;
+    return httpsClientBuilder.build();
   }
 
   /**
@@ -1102,7 +1116,7 @@ public class HttpConnector {
    * @param followRedirects if redirect must be performed or not
    * @return the closeable http client
    */
-  private CloseableHttpClient initializeCloseableHttpClient(String protocol,
+  private HttpClientBuilder initializeHttpClientBuilder(String protocol,
       boolean followRedirects) {
     if (userAgent != null && userAgent.length() > 0) {
       //logger.debug("Setting user agent header to: " + userAgent);
@@ -1166,17 +1180,14 @@ public class HttpConnector {
           .setRoutePlanner(routePlanner)
           .setProxy(proxy)
           .setConnectionManager(cm)
-          .setDefaultRequestConfig(config)
-          .build();
+          .setDefaultRequestConfig(config);
     } else {
       return HttpClients.custom()
           .setDefaultAuthSchemeRegistry(authProviders)
           .setDefaultHeaders(customHeaders)
           .setDefaultCredentialsProvider(credentialsProvider)
           .setConnectionManager(cm)
-          .setDefaultRequestConfig(config)
-          .build();
-
+          .setDefaultRequestConfig(config);
     }
   }
 
@@ -1265,8 +1276,7 @@ public class HttpConnector {
 
   /**
    * Check if a given IPv4 Address in its string representation belongs to a private network
-   * (according to RFC 1918).
-   * Use to check if proxies should be bypassed.
+   * (according to RFC 1918). Use to check if proxies should be bypassed.
    *
    * @param ipAddress the IP address to check as a String
    * @return true if it belongs to a private network false otherwise
@@ -1283,8 +1293,8 @@ public class HttpConnector {
   }
 
   /**
-   * Check if a given IPv4 Address in its string representation is a loopback address.
-   * Use to check if proxies should be bypassed.
+   * Check if a given IPv4 Address in its string representation is a loopback address. Use to check
+   * if proxies should be bypassed.
    *
    * @param ipAddress the IP address to check as a String
    * @return true if it is a loopback address false otherwise
