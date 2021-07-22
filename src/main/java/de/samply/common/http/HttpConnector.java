@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.configuration.Configuration;
 import org.apache.http.Header;
@@ -67,6 +68,8 @@ import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.codehaus.jackson.map.DeserializationConfig;
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
+import org.glassfish.jersey.apache.connector.ApacheHttpClientBuilderConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -921,6 +924,80 @@ public class HttpConnector {
     return getClient(getHttpClient(url), failOnUnknownProperties);
   }
 
+  /**
+   * Return a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
+   * {@link ApacheConnectorProvider}. The client will fail then receiving unknown properties in
+   * result
+   * @param url The url which the client should connect to
+   * @return the JAX-RS Client
+   */
+  public javax.ws.rs.client.Client getJaxRsClient(URL url) {
+    return getJaxRsClient(url.getProtocol(), true);
+  }
+
+  /**
+   * Return a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
+   * {@link ApacheConnectorProvider}.
+   * @param url The url which the client should connect to.
+   * @param failOnUnknownProperties Wether to fail or ignore unknown properties in the result.
+   * @return the JAX-RS Client
+   */
+  public javax.ws.rs.client.Client getJaxRsClient(URL url, Boolean failOnUnknownProperties) {
+    return getJaxRsClient(url.getProtocol(), failOnUnknownProperties);
+  }
+
+  /**
+   * Return a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
+   * {@link ApacheConnectorProvider}. The client will fail then receiving unknown properties in
+   * result
+   * @param urlOrScheme either the protocol or the url for which the client will be used
+   * @return the JAX-RS Client
+   */
+  public javax.ws.rs.client.Client getJaxRsClient(String urlOrScheme) {
+    return getJaxRsClient(urlOrScheme, true);
+  }
+
+  /**
+   * Returns a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
+   * {@link ApacheConnectorProvider}.
+   *
+   * @param urlOrScheme   either the protocol or the url for which the client will be used
+   * @param failOnUnknownProperties if or not to fail on unknown properties
+   * @return the JAX-RS Client
+   */
+  public javax.ws.rs.client.Client getJaxRsClient(String urlOrScheme,
+      Boolean failOnUnknownProperties) {
+    org.glassfish.jersey.client.ClientConfig clientConfig =
+        new org.glassfish.jersey.client.ClientConfig();
+
+    try {
+      URL url = new URL(urlOrScheme);
+      if (url.getProtocol().equalsIgnoreCase(PROTOCOL_HTTP)) {
+        clientConfig
+            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpClientBuilder);
+      } else if (url.getProtocol().equalsIgnoreCase(PROTOCOL_HTTPS)) {
+        clientConfig
+            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpsClientBuilder);
+      }
+    } catch (MalformedURLException e) {
+      if (urlOrScheme.equalsIgnoreCase(PROTOCOL_HTTP)) {
+        clientConfig
+            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpClientBuilder);
+      } else if (urlOrScheme.equalsIgnoreCase(PROTOCOL_HTTPS)) {
+        clientConfig
+            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpsClientBuilder);
+      }
+    }
+
+    if (Boolean.FALSE.equals(failOnUnknownProperties)) {
+      JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
+          .configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      clientConfig.register(jacksonJsonProvider);
+    }
+
+    clientConfig.connectorProvider(new ApacheConnectorProvider());
+    return ClientBuilder.newClient(clientConfig);
+  }
 
   /**
    * Returns the proxy needed for the given target.
