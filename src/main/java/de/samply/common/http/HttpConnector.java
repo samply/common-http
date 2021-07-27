@@ -171,14 +171,23 @@ public class HttpConnector {
   /**
    * The httpc.
    */
-  @Deprecated
   private CloseableHttpClient httpc;
 
   /**
    * The httpsc.
    */
-  @Deprecated
   private CloseableHttpClient httpsc;
+
+  /**
+   * The JAX-RS client for http requests.
+   */
+  private javax.ws.rs.client.Client httpClient;
+
+
+  /**
+   * The JAX-RS client for https requests.
+   */
+  private javax.ws.rs.client.Client httpsClient;
 
   /**
    * The HttpClientBuilder used for http request.
@@ -414,21 +423,42 @@ public class HttpConnector {
 
   private void initClients(boolean followRedirects) {
     httpClientBuilder = initializeHttpClientBuilder(PROTOCOL_HTTP, followRedirects);
+    httpc = httpClientBuilder.build();
+    httpClient = initJaxRsClient(httpClientBuilder);
     if (httpProxyUrl == null && httpsProxyUrl == null) {
       httpsClientBuilder = httpClientBuilder;
+      httpsc = httpc;
+      httpsClient = httpClient;
     } else {
       if (httpsProxyUrl == null
           || httpProxyPort.equalsIgnoreCase(httpsProxyPort)
           && httpProxyUrl.equalsIgnoreCase(httpsProxyUrl)) {
         httpsClientBuilder = httpClientBuilder;
+        httpsc = httpc;
+        httpsClient = httpClient;
       } else {
         httpsClientBuilder = initializeHttpClientBuilder(PROTOCOL_HTTPS, followRedirects);
+        httpsc = httpsClientBuilder.build();
+        httpsClient = initJaxRsClient(httpsClientBuilder);
       }
     }
   }
 
+
   /**
-   * NOTE: Unsure about usage of this function, will it ever get called for example on shutdown?
+   * Builds a JAX-RS Client based on a HttpClientBuilder.
+   * @param clientBuilderConfigurator the builder used for configuring the Client
+   */
+  private javax.ws.rs.client.Client initJaxRsClient(HttpClientBuilder clientBuilderConfigurator) {
+    org.glassfish.jersey.client.ClientConfig clientConfig =
+        new org.glassfish.jersey.client.ClientConfig();
+    clientConfig
+        .register((ApacheHttpClientBuilderConfigurator) notNeeded -> (clientBuilderConfigurator));
+    clientConfig.connectorProvider(new ApacheConnectorProvider());
+    return ClientBuilder.newClient(clientConfig);
+  }
+
+  /**
    * Closes the clients.
    *
    * @throws IOException ioException
@@ -967,36 +997,21 @@ public class HttpConnector {
    */
   public javax.ws.rs.client.Client getJaxRsClient(String urlOrScheme,
       Boolean failOnUnknownProperties) {
-    org.glassfish.jersey.client.ClientConfig clientConfig =
-        new org.glassfish.jersey.client.ClientConfig();
-
     try {
       URL url = new URL(urlOrScheme);
       if (url.getProtocol().equalsIgnoreCase(PROTOCOL_HTTP)) {
-        clientConfig
-            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpClientBuilder);
+        return httpClient;
       } else if (url.getProtocol().equalsIgnoreCase(PROTOCOL_HTTPS)) {
-        clientConfig
-            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpsClientBuilder);
+        return httpsClient;
       }
     } catch (MalformedURLException e) {
       if (urlOrScheme.equalsIgnoreCase(PROTOCOL_HTTP)) {
-        clientConfig
-            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpClientBuilder);
+        return httpClient;
       } else if (urlOrScheme.equalsIgnoreCase(PROTOCOL_HTTPS)) {
-        clientConfig
-            .register((ApacheHttpClientBuilderConfigurator) notNeeded -> httpsClientBuilder);
+        return httpsClient;
       }
     }
-
-    if (Boolean.FALSE.equals(failOnUnknownProperties)) {
-      JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
-          .configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-      clientConfig.register(jacksonJsonProvider);
-    }
-
-    clientConfig.connectorProvider(new ApacheConnectorProvider());
-    return ClientBuilder.newClient(clientConfig);
+    return null;
   }
 
   /**
@@ -1155,7 +1170,7 @@ public class HttpConnector {
    */
   @Deprecated
   public CloseableHttpClient getHttpc() {
-    return httpClientBuilder.build();
+    return httpc;
   }
 
   /**
@@ -1164,7 +1179,7 @@ public class HttpConnector {
    * @return CloseableHttpClient
    */
   public CloseableHttpClient getHttpClientForHttp() {
-    return httpClientBuilder.build();
+    return httpc;
   }
 
   /**
@@ -1174,7 +1189,7 @@ public class HttpConnector {
    */
   @Deprecated
   public CloseableHttpClient getHttpsc() {
-    return httpsClientBuilder.build();
+    return httpsc;
   }
 
   /**
@@ -1183,7 +1198,7 @@ public class HttpConnector {
    * @return CloseableHttpClient
    */
   public CloseableHttpClient getHttpClientForHttps() {
-    return httpsClientBuilder.build();
+    return httpsc;
   }
 
   /**
