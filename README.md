@@ -6,7 +6,8 @@ UNMERGED BRANCH -CHANGES FROM OTHER SAMPLY TEAMS MISSING
 LIB to easily use both apache and jersey http connectory
 
 ## Usage
-```
+### Configuration
+``` Java
 // define proxy if you have one (you can also use apache configuration instead of map)
 HashMap<String, String> config = new HashMap<>();
 config.put(HttpConnector.PROXY_HTTP_HOST, "123.123.123.123");
@@ -17,16 +18,17 @@ config.put(HttpConnector.PROXY_HTTP_PASSWORD, "bar");
 HttpConnector hc = new HttpConnector(config);
 ```
 
-```
+### Executing Requests
+``` Java
 // Add http-auth credentials
 hc.addHttpAuth("http://someserver.somedomain.de", "foo", "bar");
 ```
-```
+``` Java
 // Define headers
 HashMap<String, String> headers = new HashMap<String, String>();
 headers.put("Accept", "application/xml");
 ```
-```
+``` Java
 // Do some action, here: GET from a given url with set headers
 // if you want a CloseableHttpResponse instead, just call doAction instead
 HashMap<String, Object> ret = hc.doActionHashMap(
@@ -37,14 +39,24 @@ HashMap<String, Object> ret = hc.doActionHashMap(
 System.out.println("SC = " + ret.get("statuscode"));
 System.out.println("Body = " + ret.get("body"));
 ```
+### Generating a Http Client
+#### Apache HttpClient
+``` Java
+// to get a prepared ApacheHTTP ClosableHttpClient for a certain url
+org.apache.http.impl.client.CloseableHttpClient apacheClient = hc.getHttpClient("http://osse-register.de");
 ```
+
+#### Jersey 1.X
+Jersey is a Java Library specifically for REST. So this client is more a REST Client than a http client.
+``` Java
 // To get a prepared Jersey client for a certain url
 com.sun.jersey.api.client.Client jerseyClient = hc.getJerseyClient("http://osse-register.de", false);
 ```
 
-```
-// to get a prepared ApacheHTTP ClosableHttpClient for a certain url
-org.apache.http.impl.client.CloseableHttpClient apacheClient = hc.getHttpClient("http://osse-register.de");
+#### Jersey 2.X
+Jersey 2 complies to the JAX-RS interface. So the client generated is from the JAX-RS interface.
+``` Java
+javax.ws.rs.client.Client client = hc.getJaxRsClient("http://osse-register.de");
 ```
 
 ## Build
@@ -55,7 +67,7 @@ Use maven to build the jar:
 mvn clean install
 ```
 
- ## License
+## License
         
  Copyright 2020 The Samply Development Community
         
