@@ -8,17 +8,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - HttpConnector now automatically enables proxyByPass for internal addresses then any "no proxy" host is set
 - Support for Jersey 2.X. common-http can now generate both, Jersey 1.X and Jersey 2.X Clients based on the Apache HttpClient.
+- Automated deploy to maven central for develop and master
 
 ## [7.2.0 - 2020-05-07]
-###Added
+### Added
 - Following redirects can now be configured
 
 ## [7.1.1 - 2020-10-29]
-###Changed
+### Changed
 - Google Style Code
 
 ## [7.1.0 - 2020-10-29]
-###Added
+### Added
 - Github Actions
 
 ## [7.0.0 - 2020-10-29]

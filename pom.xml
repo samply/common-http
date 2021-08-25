@@ -58,6 +58,7 @@
         <slf4j-api.version>1.7.25</slf4j-api.version>
         <httpclient.version>4.5.3</httpclient.version>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -69,6 +70,33 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${maven-gpg-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>sign</goal>
+              </goals>
+              <configuration>
+                <!-- Prevent `gpg` from using pinentry programs -->
+                <gpgArguments>
+                  <arg>--pinentry-mode</arg>
+                  <arg>loopback</arg>
+                </gpgArguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+
     <dependencies>
         <!-- outdated Jersey-Version but it is hard to upgrade to 2.x -->
         <dependency>
