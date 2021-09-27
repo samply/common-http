@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>common-http</artifactId>
-    <version>7.3.0-SNAPSHOT</version>
+    <version>7.3.0</version>
 
     <name>Samply Common Http library</name>
     <description>LIB to easily use both apache and jersey http connectors</description>
@@ -39,16 +39,17 @@
         <url>https://github.com/samply/common-http</url>
     </scm>
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
+      <repository>
+        <id>samply-maven</id>
+        <url>
+        https://maven.samply.de/nexus/content/repositories/oss-releases/</url>
+      </repository>
+      <snapshotRepository>
+        <id>samply-maven</id>
+        <url>
+        https://maven.samply.de/nexus/content/repositories/oss-snapshots</url>
+      </snapshotRepository>
     </distributionManagement>
-
     <properties>
         <common-config.version>5.1.0</common-config.version>
         <version.jersey>1.19.4</version.jersey>

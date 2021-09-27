@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [7.3.0 - 2020-09-27]
 ### Added
 - HttpConnector now automatically enables proxyByPass for internal addresses then any "no proxy" host is set
 - Support for Jersey 2.X. common-http can now generate both, Jersey 1.X and Jersey 2.X Clients based on the Apache HttpClient.
