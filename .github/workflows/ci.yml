@@ -8,7 +8,6 @@ on:
     branches:
       - master
       - develop
-      - refactor/useSamplyJavaWorkflow
   pull_request:
     branches:
       - master
