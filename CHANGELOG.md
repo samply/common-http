@@ -1,3 +1,4 @@
+Just testing, if the ci will not push the artifact to maven central. For this the github.event must be pull_request and correctly transfered to the called workflow
 # Change Log
 All notable changes to this project will be documented in this file.
 
