@@ -1,4 +1,3 @@
-UNMERGED BRANCH -CHANGES FROM OTHER SAMPLY TEAMS MISSING
 # Samply HTTP Library
 
 ## General information
