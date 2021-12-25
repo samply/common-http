@@ -56,7 +56,7 @@
         <commons-configuration.version>1.10</commons-configuration.version>
 
         <skipTests>false</skipTests>
-        <slf4j-api.version>1.7.25</slf4j-api.version>
+        <slf4j-api.version>1.7.32</slf4j-api.version>
         <httpclient.version>4.5.3</httpclient.version>
     </properties>
 
