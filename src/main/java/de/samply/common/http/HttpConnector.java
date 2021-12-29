@@ -1,10 +1,10 @@
 package de.samply.common.http;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
-import com.sun.jersey.client.apache4.ApacheHttpClient4Handler;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -16,9 +16,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
 import org.apache.commons.configuration.Configuration;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
@@ -65,11 +62,11 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
-import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
-import org.codehaus.jackson.map.DeserializationConfig;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.apache.connector.ApacheHttpClientBuilderConfigurator;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,13 +178,13 @@ public class HttpConnector {
   /**
    * The JAX-RS client for http requests.
    */
-  private javax.ws.rs.client.Client httpClient;
+  private Client httpClient;
 
 
   /**
    * The JAX-RS client for https requests.
    */
-  private javax.ws.rs.client.Client httpsClient;
+  private Client httpsClient;
 
   /**
    * The HttpClientBuilder used for http request.
@@ -447,9 +444,10 @@ public class HttpConnector {
 
   /**
    * Builds a JAX-RS Client based on a HttpClientBuilder.
+   *
    * @param clientBuilderConfigurator the builder used for configuring the Client
    */
-  private javax.ws.rs.client.Client initJaxRsClient(HttpClientBuilder clientBuilderConfigurator) {
+  private Client initJaxRsClient(HttpClientBuilder clientBuilderConfigurator) {
     org.glassfish.jersey.client.ClientConfig clientConfig =
         new org.glassfish.jersey.client.ClientConfig();
     clientConfig
@@ -818,7 +816,7 @@ public class HttpConnector {
   }
 
   /**
-   * Transforms a apache httpclient to a jersey client also enables POJO MAPPING as feature.
+   * Transforms a apache httpclient to a jakarta client also enables POJO MAPPING as feature.
    *
    * @param httpClient              the http client
    * @param failOnUnknownProperties if the client shall fail on deserialisation on unknown or
@@ -826,23 +824,22 @@ public class HttpConnector {
    * @return com.sun.jersey.api.client.Client
    */
   public Client getClient(CloseableHttpClient httpClient, Boolean failOnUnknownProperties) {
-    ClientConfig clientConfig = new DefaultClientConfig();
-    clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING,
-        Boolean.TRUE);
+    ClientConfig clientConfig = new ClientConfig().connectorProvider(new ApacheConnectorProvider());
+    clientConfig.register(JacksonJsonProvider.class);
+    clientConfig.register(new BasicCookieStore());
+    clientConfig.register(httpClient);
 
     if (!failOnUnknownProperties) {
       JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
-          .configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-      clientConfig.getSingletons().add(jacksonJsonProvider);
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      clientConfig.register(jacksonJsonProvider);
     }
-
-    return new Client(new ApacheHttpClient4Handler(httpClient,
-        new BasicCookieStore(), false), clientConfig);
+    return ClientBuilder.newClient(clientConfig);
   }
 
 
   /**
-   * Get an Jersey Client.
+   * Get an jakarta Client.
    *
    * @param httpClient the httpclient
    * @return httpclient
@@ -854,148 +851,150 @@ public class HttpConnector {
   }
 
   /**
-   * Returns a jersey client for http connections. This client will fail on unknown properties.
+   * Returns a jakarta client for http connections. This client will fail on unknown properties.
    *
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClientForHttp() {
+  public Client getJakartaClientForHttp() {
     return getClient(getHttpClientForHttp(), true);
   }
 
   /**
-   * Returns a jersey client for http connections.
+   * Returns a jakarta client for http connections.
    *
    * @param failOnUnknownProperties if or not to fail on unknown properties
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClientForHttp(Boolean failOnUnknownProperties) {
+  public Client getJakartaClientForHttp(Boolean failOnUnknownProperties) {
     return getClient(getHttpClientForHttp(), failOnUnknownProperties);
   }
 
   /**
-   * Returns a jersey client for https connections. This client will fail on unknown properties.
+   * Returns a jakarta client for https connections. This client will fail on unknown properties.
    *
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClientForHttps() {
+  public Client getJakartaClientForHttps() {
     return getClient(getHttpClientForHttps(), true);
   }
 
   /**
-   * Returns a jersey client for https connections.
+   * Returns a jakarta client for https connections.
    *
    * @param failOnUnknownProperties if or not to fail on unknown properties
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClientForHttps(Boolean failOnUnknownProperties) {
+  public Client getJakartaClientForHttps(Boolean failOnUnknownProperties) {
     return getClient(getHttpClientForHttps(), failOnUnknownProperties);
   }
 
   /**
-   * Returns a jersey client for a given httphost.
+   * Returns a jakarta client for a given httphost.
    *
    * @param target                  the target
    * @param failOnUnknownProperties if or not to fail on unknown properties
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClient(HttpHost target, Boolean failOnUnknownProperties) {
+  public Client getJakartaClient(HttpHost target, Boolean failOnUnknownProperties) {
     return getClient(getHttpClient(target), failOnUnknownProperties);
   }
 
   /**
-   * Returns a jersey client for a given httphost. This client will fail on unknown properties
+   * Returns a jakarta client for a given httphost. This client will fail on unknown properties
    *
    * @param target the target
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClient(HttpHost target) {
+  public Client getJakartaClient(HttpHost target) {
     return getClient(getHttpClient(target), true);
   }
 
   /**
-   * Returns a jersey client for a given url or Scheme. This client will fail on unknown properties
+   * Returns a jakarta client for a given url or Scheme. This client will fail on unknown properties
    *
    * @param urlOrScheme the url or scheme
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClient(String urlOrScheme) {
+  public Client getJakartaClient(String urlOrScheme) {
     return getClient(getHttpClient(urlOrScheme), true);
   }
 
   /**
-   * Returns a jersey client for a given url or Scheme.
+   * Returns a jakarta client for a given url or Scheme.
    *
    * @param urlOrScheme             the url or scheme
    * @param failOnUnknownProperties if or not to fail on unknown properties
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClient(String urlOrScheme, Boolean failOnUnknownProperties) {
+  public Client getJakartaClient(String urlOrScheme, Boolean failOnUnknownProperties) {
     return getClient(getHttpClient(urlOrScheme), failOnUnknownProperties);
   }
 
   /**
-   * Returns a jersey client for a given java.net.URL This client will fail on unknown properties.
+   * Returns a jakarta client for a given java.net.URL This client will fail on unknown properties.
    *
    * @param url the url
-   * @return com.sun.jersey.api.client.Client jersey client
+   * @return jakarta.ws.rs.client.Client
    */
-  public Client getJerseyClient(URL url) {
+  public Client getJakartaClient(URL url) {
     return getClient(getHttpClient(url), true);
   }
 
   /**
-   * Returns a jersey client for a given java.net.URL
+   * Returns a jakarta client for a given java.net.URL
    *
    * @param url                     the url
    * @param failOnUnknownProperties if or not to fail on unknown properties
-   * @return the jersey client
+   * @return the jakarta client
    */
-  public Client getJerseyClient(URL url, Boolean failOnUnknownProperties) {
+  public Client getJakartaClient(URL url, Boolean failOnUnknownProperties) {
     return getClient(getHttpClient(url), failOnUnknownProperties);
   }
 
   /**
-   * Return a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
-   * {@link ApacheConnectorProvider}. The client will fail then receiving unknown properties in
-   * result
+   * Return a JAX-RS {@link Client} build with {@link org.glassfish.jersey} and {@link
+   * ApacheConnectorProvider}. The client will fail then receiving unknown properties in result
+   *
    * @param url The url which the client should connect to
    * @return the JAX-RS Client
    */
-  public javax.ws.rs.client.Client getJaxRsClient(URL url) {
+  public Client getJaxRsClient(URL url) {
     return getJaxRsClient(url.getProtocol(), true);
   }
 
   /**
-   * Return a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
-   * {@link ApacheConnectorProvider}.
-   * @param url The url which the client should connect to.
+   * Return a JAX-RS {@link Client} build with {@link org.glassfish.jersey} and {@link
+   * ApacheConnectorProvider}.
+   *
+   * @param url                     The url which the client should connect to.
    * @param failOnUnknownProperties Wether to fail or ignore unknown properties in the result.
    * @return the JAX-RS Client
    */
-  public javax.ws.rs.client.Client getJaxRsClient(URL url, Boolean failOnUnknownProperties) {
+  public Client getJaxRsClient(URL url, Boolean failOnUnknownProperties) {
     return getJaxRsClient(url.getProtocol(), failOnUnknownProperties);
   }
 
   /**
-   * Return a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
-   * {@link ApacheConnectorProvider}. The client will fail then receiving unknown properties in
-   * result
+   * Return a JAX-RS {@link Client} build with {@link org.glassfish.jersey} and {@link
+   * ApacheConnectorProvider}. The client will fail then receiving unknown properties in result
+   *
    * @param urlOrScheme either the protocol or the url for which the client will be used
    * @return the JAX-RS Client
    */
-  public javax.ws.rs.client.Client getJaxRsClient(String urlOrScheme) {
+  public Client getJaxRsClient(String urlOrScheme) {
     return getJaxRsClient(urlOrScheme, true);
   }
 
   /**
-   * Returns a JAX-RS {@link javax.ws.rs.client.Client} build with {@link org.glassfish.jersey} and
-   * {@link ApacheConnectorProvider}.
+   * Returns a JAX-RS {@link Client} build with {@link org.glassfish.jersey} and {@link
+   * ApacheConnectorProvider}.
    *
-   * @param urlOrScheme   either the protocol or the url for which the client will be used
+   * @param urlOrScheme             either the protocol or the url for which the client will be
+   *                                used
    * @param failOnUnknownProperties if or not to fail on unknown properties
    * @return the JAX-RS Client
    */
-  public javax.ws.rs.client.Client getJaxRsClient(String urlOrScheme,
+  public Client getJaxRsClient(String urlOrScheme,
       Boolean failOnUnknownProperties) {
     try {
       URL url = new URL(urlOrScheme);
