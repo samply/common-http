@@ -4,13 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [7.3.0 - 2020-09-27]
+## [7.4.0 - 2022-01-03]
+### Added
+- Jersey 3
+
+## [7.3.0 - 2021-09-27]
 ### Added
 - HttpConnector now automatically enables proxyByPass for internal addresses then any "no proxy" host is set
 - Support for Jersey 2.X. common-http can now generate both, Jersey 1.X and Jersey 2.X Clients based on the Apache HttpClient.
 - Automated deploy to maven central for develop and master
 
-## [7.2.0 - 2020-05-07]
+## [7.2.0 - 2021-05-07]
 ### Added
 - Following redirects can now be configured
 

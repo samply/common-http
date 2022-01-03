@@ -1,9 +1,9 @@
 package de.samply.common.http.test;
 
+import jakarta.ws.rs.client.Client;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
-import com.sun.jersey.api.client.Client;
 import de.samply.common.http.HttpConnector;
 import de.samply.common.http.HttpConnectorException;
 
@@ -49,7 +49,7 @@ public class Test {
 
             // To get a prepared Jersey client for a certain url
             Client jerseyClient = hc
-                    .getJerseyClient("http://osse-register.de", false);
+                    .getJakartaClient("http://osse-register.de", false);
 
             // to get a prepared ApacheHTTP ClosableHttpClient for a certain url
             org.apache.http.impl.client.CloseableHttpClient apacheClient = hc
