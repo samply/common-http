@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Fix Proxy problems
 - Refactoring in HttpConnector
+- increased slf4j and jersey version
 
 ## Unreleased
 ## [7.4.0 - 2022-01-03]
