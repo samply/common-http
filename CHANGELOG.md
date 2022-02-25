@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+## [7.4.1 - 2022-01-03]
+### Added
+- Fix Proxy problems
+- Refactoring in HttpConnector
+
+## Unreleased
 ## [7.4.0 - 2022-01-03]
 ### Added
 - Jersey 3

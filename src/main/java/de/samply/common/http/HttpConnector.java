@@ -37,6 +37,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.config.Lookup;
 import org.apache.http.config.RegistryBuilder;
@@ -65,6 +66,8 @@ import org.apache.http.util.EntityUtils;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.apache.connector.ApacheHttpClientBuilderConfigurator;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.jackson.internal.DefaultJacksonJaxbJsonProvider;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider;
 import org.slf4j.Logger;
@@ -108,6 +111,16 @@ public class HttpConnector {
    * The hostname of the http proxy.
    */
   public static final String PROXY_HTTP_HOST = "proxy.http.host";
+
+  /**
+   * The protocol of the http proxy.
+   */
+  public static final String PROXY_HTTP_PROTOCOL = "proxy.http.protocol";
+  /**
+   * The protocol of the http proxy.
+   */
+  public static final String PROXY_HTTPS_PROTOCOL = "proxy.https.protocol";
+
   /**
    * The hostname of the http proxy.
    */
@@ -159,6 +172,16 @@ public class HttpConnector {
    * The https proxy password.
    */
   private String httpsProxyPassword;
+
+  /**
+   * The http proxy protocol.
+   */
+  private String httpProxyProtocol = PROTOCOL_HTTP;
+
+  /**
+   * The https proxy protocol.
+   */
+  private String httpsProxyProtocol = PROXY_HTTPS_PROTOCOL;
 
   /**
    * The Credentials Provider.
@@ -217,9 +240,7 @@ public class HttpConnector {
    * Instantiates a new http connector.
    */
   public HttpConnector() {
-    customHeaders = new ArrayList<>();
-    credentialsProvider = initializeCredentialsProvider();
-    initClients();
+    initHttpConnector(null, null, null);
   }
 
   /**
@@ -228,25 +249,7 @@ public class HttpConnector {
    * @param config the config
    */
   public HttpConnector(Configuration config) {
-    customHeaders = new ArrayList<>();
-    httpProxyUrl = config.getString(PROXY_HTTP_HOST);
-    httpProxyPort = config.getString(PROXY_HTTP_PORT);
-    httpsProxyUrl = config.getString(PROXY_HTTPS_HOST);
-    httpsProxyPort = config.getString(PROXY_HTTPS_PORT);
-
-    httpProxyUsername = config.getString(PROXY_HTTP_USERNAME);
-    httpProxyPassword = config.getString(PROXY_HTTP_PASSWORD);
-    httpsProxyUsername = config.getString(PROXY_HTTPS_USERNAME);
-    httpsProxyPassword = config.getString(PROXY_HTTPS_PASSWORD);
-
-    if (config.getString(USER_AGENT) != null) {
-      userAgent = config.getString(USER_AGENT);
-    }
-
-    bypassProxyForPrivateNetworks = config.getBoolean(PROXY_BYPASS_PRIVATE_NETWORKS, false);
-
-    credentialsProvider = initializeCredentialsProvider();
-    initClients();
+    initHttpConnector(config, null, null, null);
   }
 
   /**
@@ -255,30 +258,7 @@ public class HttpConnector {
    * @param config the config
    */
   public HttpConnector(HashMap<String, String> config) {
-    customHeaders = new ArrayList<>();
-    httpProxyUrl = config.get(PROXY_HTTP_HOST);
-    httpProxyPort = config.get(PROXY_HTTP_PORT);
-    httpsProxyUrl = config.get(PROXY_HTTPS_HOST);
-    httpsProxyPort = config.get(PROXY_HTTPS_PORT);
-
-    httpProxyUsername = config.get(PROXY_HTTP_USERNAME);
-    httpProxyPassword = config.get(PROXY_HTTP_PASSWORD);
-    httpsProxyUsername = config.get(PROXY_HTTPS_USERNAME);
-    httpsProxyPassword = config.get(PROXY_HTTPS_PASSWORD);
-
-    if (config.get(USER_AGENT) != null) {
-      userAgent = config.get(USER_AGENT);
-    }
-
-    try {
-      bypassProxyForPrivateNetworks = Boolean
-          .parseBoolean(config.get(PROXY_BYPASS_PRIVATE_NETWORKS));
-    } catch (Exception e) {
-      bypassProxyForPrivateNetworks = false;
-    }
-
-    credentialsProvider = initializeCredentialsProvider();
-    initClients();
+    initHttpConnector(config, null, null, null);
   }
 
   /**
@@ -288,25 +268,7 @@ public class HttpConnector {
    * @param credentialsProvider the preconfigured Credentials Provider
    */
   public HttpConnector(HashMap<String, String> config, CredentialsProvider credentialsProvider) {
-    customHeaders = new ArrayList<>();
-    httpProxyUrl = config.get(PROXY_HTTP_HOST);
-    httpProxyPort = config.get(PROXY_HTTP_PORT);
-    httpsProxyUrl = config.get(PROXY_HTTPS_HOST);
-    httpsProxyPort = config.get(PROXY_HTTPS_PORT);
-
-    if (config.get(USER_AGENT) != null) {
-      userAgent = config.get(USER_AGENT);
-    }
-
-    try {
-      bypassProxyForPrivateNetworks = Boolean
-          .parseBoolean(config.get(PROXY_BYPASS_PRIVATE_NETWORKS));
-    } catch (Exception e) {
-      bypassProxyForPrivateNetworks = false;
-    }
-
-    setCp(credentialsProvider);
-    initClients();
+    initHttpConnector(config, credentialsProvider, null, null);
   }
 
   /**
@@ -318,11 +280,129 @@ public class HttpConnector {
    */
   public HttpConnector(HashMap<String, String> config, CredentialsProvider credentialsProvider,
       int timeout) {
+    initHttpConnector(config, credentialsProvider, timeout, null);
+  }
+
+  /**
+   * Instantiates new http connector with samply configuration.
+   *
+   * @param config Samply Configuration
+   */
+  public HttpConnector(de.samply.common.config.Configuration config) {
+    initHttpConnector(config, null, null, null);
+  }
+
+  /**
+   * Instantiates new http connector with samply configuration.
+   *
+   * @param config          Samply Configuration
+   * @param followRedirects if redirect must be performed or not
+   */
+  public HttpConnector(de.samply.common.config.Configuration config, boolean followRedirects) {
+    initHttpConnector(config, null, null, followRedirects);
+  }
+
+  /**
+   * Instantiates new http connector with samply proxy configuration.
+   *
+   * @param config Samply Proxy (no keystore settings!)
+   */
+  public HttpConnector(de.samply.common.config.Proxy config) {
+    initHttpConnector(config, null, null, null);
+  }
+
+  private void initHttpConnector(Configuration config, CredentialsProvider credentialsProvider,
+      Integer timeout, Boolean followRedirects) {
+    setConfiguration(config);
+    initHttpConnector(credentialsProvider, timeout, followRedirects);
+  }
+
+  private void initHttpConnector(HashMap<String, String> config,
+      CredentialsProvider credentialsProvider, Integer timeout, Boolean followRedirects) {
+    setConfiguration(config);
+    initHttpConnector(credentialsProvider, timeout, followRedirects);
+  }
+
+  private void initHttpConnector(de.samply.common.config.Proxy config,
+      CredentialsProvider credentialsProvider, Integer timeout, Boolean followRedirects) {
+    setConfiguration(config);
+    initHttpConnector(credentialsProvider, timeout, followRedirects);
+  }
+
+  private void initHttpConnector(de.samply.common.config.Configuration config,
+      CredentialsProvider credentialsProvider, Integer timeout, Boolean followRedirects) {
+    setConfiguration(config);
+    initHttpConnector(credentialsProvider, timeout, followRedirects);
+  }
+
+
+  private void initHttpConnector(CredentialsProvider credentialsProvider, Integer timeout,
+      Boolean followRedirects) {
+
     customHeaders = new ArrayList<>();
+
+    this.credentialsProvider =
+        (credentialsProvider != null) ? credentialsProvider : initializeCredentialsProvider();
+    if (timeout != null) {
+      this.timeout = timeout;
+    }
+
+    if (followRedirects != null) {
+      initClients(followRedirects);
+    } else {
+      initClients();
+    }
+
+  }
+
+
+  private void setConfiguration(Configuration config) {
+
+    httpProxyUrl = config.getString(PROXY_HTTP_HOST);
+    httpProxyPort = config.getString(PROXY_HTTP_PORT);
+    httpsProxyUrl = config.getString(PROXY_HTTPS_HOST);
+    httpsProxyPort = config.getString(PROXY_HTTPS_PORT);
+    httpProxyProtocol = config.getString(PROXY_HTTP_PROTOCOL);
+    if (httpProxyProtocol == null) {
+      httpProxyProtocol = PROTOCOL_HTTP;
+    }
+
+    httpProxyUsername = config.getString(PROXY_HTTP_USERNAME);
+    httpProxyPassword = config.getString(PROXY_HTTP_PASSWORD);
+    httpsProxyUsername = config.getString(PROXY_HTTPS_USERNAME);
+    httpsProxyPassword = config.getString(PROXY_HTTPS_PASSWORD);
+    httpsProxyProtocol = config.getString(PROXY_HTTPS_PROTOCOL);
+    if (httpsProxyProtocol == null) {
+      httpsProxyProtocol = PROTOCOL_HTTPS;
+    }
+
+    if (config.getString(USER_AGENT) != null) {
+      userAgent = config.getString(USER_AGENT);
+    }
+
+    bypassProxyForPrivateNetworks = config.getBoolean(PROXY_BYPASS_PRIVATE_NETWORKS, false);
+
+  }
+
+  private void setConfiguration(HashMap<String, String> config) {
+
     httpProxyUrl = config.get(PROXY_HTTP_HOST);
     httpProxyPort = config.get(PROXY_HTTP_PORT);
     httpsProxyUrl = config.get(PROXY_HTTPS_HOST);
     httpsProxyPort = config.get(PROXY_HTTPS_PORT);
+    httpProxyProtocol = config.get(PROXY_HTTP_PROTOCOL);
+    if (httpProxyProtocol == null) {
+      httpProxyProtocol = PROTOCOL_HTTP;
+    }
+
+    httpProxyUsername = config.get(PROXY_HTTP_USERNAME);
+    httpProxyPassword = config.get(PROXY_HTTP_PASSWORD);
+    httpsProxyUsername = config.get(PROXY_HTTPS_USERNAME);
+    httpsProxyPassword = config.get(PROXY_HTTPS_PASSWORD);
+    httpsProxyProtocol = config.get(PROXY_HTTPS_PROTOCOL);
+    if (httpsProxyProtocol == null) {
+      httpsProxyProtocol = PROTOCOL_HTTPS;
+    }
 
     if (config.get(USER_AGENT) != null) {
       userAgent = config.get(USER_AGENT);
@@ -334,66 +414,11 @@ public class HttpConnector {
     } catch (Exception e) {
       bypassProxyForPrivateNetworks = false;
     }
-    this.timeout = timeout;
-    setCp(credentialsProvider);
-    initClients();
+
   }
 
-  /**
-   * Instantiates new http connector with samply configuration.
-   *
-   * @param config Samply Configuration
-   */
-  public HttpConnector(de.samply.common.config.Configuration config) {
-    this(config, true);
-  }
+  private void setConfiguration(de.samply.common.config.Proxy config) {
 
-  /**
-   * Instantiates new http connector with samply configuration.
-   *
-   * @param config          Samply Configuration
-   * @param followRedirects if redirect must be performed or not
-   */
-  public HttpConnector(de.samply.common.config.Configuration config, boolean followRedirects) {
-    customHeaders = new ArrayList<>();
-    if (config != null && config.getProxy() != null) {
-      if (config.getProxy().getHttp() != null
-          && config.getProxy().getHttp().getUrl() != null) {
-
-        httpProxyUrl = config.getProxy().getHttp().getUrl().getHost();
-        httpProxyPort = config.getProxy().getHttp().getUrl().getPort() + "";
-
-        httpProxyUsername = config.getProxy().getHttp().getUsername();
-        httpProxyPassword = config.getProxy().getHttp().getPassword();
-
-      }
-
-      if (config.getProxy().getHttps() != null
-          && config.getProxy().getHttps().getUrl() != null) {
-        httpsProxyUrl = config.getProxy().getHttps().getUrl().getHost();
-        httpsProxyPort = config.getProxy().getHttps().getUrl().getPort() + "";
-
-        httpsProxyUsername = config.getProxy().getHttps().getUsername();
-        httpsProxyPassword = config.getProxy().getHttps().getPassword();
-      }
-
-      if (config.getProxy().getNoProxyHosts() != null
-          && !config.getProxy().getNoProxyHosts().getHost().isEmpty()) {
-        bypassProxyForPrivateNetworks = true;
-      }
-    }
-
-    credentialsProvider = initializeCredentialsProvider();
-    initClients(followRedirects);
-  }
-
-  /**
-   * Instantiates new http connector with samply proxy configuration.
-   *
-   * @param config Samply Proxy (no keystore settings!)
-   */
-  public HttpConnector(de.samply.common.config.Proxy config) {
-    customHeaders = new ArrayList<>();
     httpProxyUrl = config.getHttp().getUrl().getHost();
     httpProxyPort = config.getHttp().getUrl().getPort() + "";
     httpsProxyUrl = config.getHttps().getUrl().getHost();
@@ -404,12 +429,50 @@ public class HttpConnector {
     httpsProxyUsername = config.getHttps().getUsername();
     httpsProxyPassword = config.getHttps().getPassword();
 
+    httpProxyProtocol = config.getHttp().getUrl().getProtocol();
+    httpsProxyProtocol = config.getHttps().getUrl().getProtocol();
+
     if (config.getNoProxyHosts() != null && !config.getNoProxyHosts().getHost().isEmpty()) {
       bypassProxyForPrivateNetworks = true;
     }
-    credentialsProvider = initializeCredentialsProvider();
-    initClients();
+
   }
+
+  private void setConfiguration(de.samply.common.config.Configuration config) {
+
+    if (config != null && config.getProxy() != null) {
+      if (config.getProxy().getHttp() != null
+          && config.getProxy().getHttp().getUrl() != null) {
+
+        httpProxyProtocol = config.getProxy().getHttp().getUrl().getProtocol();
+        httpProxyUrl = config.getProxy().getHttp().getUrl().getHost();
+        httpProxyPort = config.getProxy().getHttp().getUrl().getPort() + "";
+
+        httpProxyUsername = config.getProxy().getHttp().getUsername();
+        httpProxyPassword = config.getProxy().getHttp().getPassword();
+
+      }
+
+      if (config.getProxy().getHttps() != null
+          && config.getProxy().getHttps().getUrl() != null) {
+        httpsProxyProtocol = config.getProxy().getHttps().getUrl().getProtocol();
+        httpsProxyUrl = config.getProxy().getHttps().getUrl().getHost();
+        httpsProxyPort = config.getProxy().getHttps().getUrl().getPort() + "";
+
+        httpsProxyUsername = config.getProxy().getHttps().getUsername();
+        httpsProxyPassword = config.getProxy().getHttps().getPassword();
+
+      }
+
+      if (config.getProxy().getNoProxyHosts() != null
+          && !config.getProxy().getNoProxyHosts().getHost().isEmpty()) {
+        bypassProxyForPrivateNetworks = true;
+      }
+    }
+
+  }
+
+
 
   /**
    * Initializes the clients If no https proxy is configured, both clients are the same.
@@ -419,7 +482,7 @@ public class HttpConnector {
   }
 
   private void initClients(boolean followRedirects) {
-    httpClientBuilder = initializeHttpClientBuilder(PROTOCOL_HTTP, followRedirects);
+    httpClientBuilder = initializeHttpClientBuilder(httpProxyProtocol, followRedirects);
     httpc = httpClientBuilder.build();
     httpClient = initJaxRsClient(httpClientBuilder);
     if (httpProxyUrl == null && httpsProxyUrl == null) {
@@ -815,6 +878,19 @@ public class HttpConnector {
     return in.replaceAll("/+", "/");
   }
 
+  private String buildHttpProxyUrl() {
+
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setScheme(httpProxyProtocol);
+    uriBuilder.setHost(httpProxyUrl);
+    if (httpProxyPort != null) {
+      uriBuilder.setPort(new Integer(httpProxyPort));
+    }
+
+    return uriBuilder.toString();
+
+  }
+
   /**
    * Transforms a apache httpclient to a jakarta client also enables POJO MAPPING as feature.
    *
@@ -824,19 +900,26 @@ public class HttpConnector {
    * @return com.sun.jersey.api.client.Client
    */
   public Client getClient(CloseableHttpClient httpClient, Boolean failOnUnknownProperties) {
+
     ClientConfig clientConfig = new ClientConfig().connectorProvider(new ApacheConnectorProvider());
     clientConfig.register(JacksonJsonProvider.class);
     clientConfig.register(new BasicCookieStore());
     clientConfig.register(httpClient);
+    if (httpProxyUrl != null) {
+      clientConfig.property(ClientProperties.PROXY_URI, buildHttpProxyUrl());
+      clientConfig.property(ClientProperties.PROXY_USERNAME, httpProxyUsername);
+      clientConfig.property(ClientProperties.PROXY_PASSWORD, httpProxyPassword);
+    }
 
     if (!failOnUnknownProperties) {
       JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
       clientConfig.register(jacksonJsonProvider);
     }
-    return ClientBuilder.newClient(clientConfig);
-  }
 
+    return ClientBuilder.newClient(clientConfig);
+
+  }
 
   /**
    * Get an jakarta Client.
