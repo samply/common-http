@@ -4,13 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
-## [7.4.1 - 2022-01-03]
+## [7.4.2 - 2022-02-25]
+### Fixed
+- increased slf4j and jersey version in master
+
+## [7.4.1 - 2022-02-25]
 ### Added
 - Fix Proxy problems
 - Refactoring in HttpConnector
+- increased slf4j and jersey version
 
-## Unreleased
 ## [7.4.0 - 2022-01-03]
 ### Added
 - Jersey 3

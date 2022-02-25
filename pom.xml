@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>common-http</artifactId>
-  <version>7.4.1</version>
+  <version>7.4.2</version>
 
   <name>Samply Common Http library</name>
   <description>LIB to easily use both apache and jersey http connectors</description>
@@ -51,11 +51,11 @@
   </distributionManagement>
   <properties>
     <common-config.version>5.1.0</common-config.version>
-    <version.jersey>3.0.3</version.jersey>
+    <version.jersey>3.0.4</version.jersey>
     <commons-configuration.version>1.10</commons-configuration.version>
 
     <skipTests>false</skipTests>
-    <slf4j-api.version>1.7.32</slf4j-api.version>
+    <slf4j-api.version>1.7.36</slf4j-api.version>
     <httpclient.version>4.5.13</httpclient.version>
   </properties>
 
