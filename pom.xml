@@ -98,13 +98,6 @@
   </build>
 
   <dependencies>
-    <!-- outdated Jersey-Version but it is hard to upgrade to 2.x -->
-    <!--        <dependency>
-                <groupId>com.sun.jersey.contribs</groupId>
-                <artifactId>jersey-apache-client4</artifactId>
-                <version>${version.jersey}</version>
-            </dependency> -->
-    <!-- Supply jersey 2.x parallel to jersey 1.x -->
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-client</artifactId>
