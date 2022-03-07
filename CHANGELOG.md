@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.4.3 - 2022-03-07]
+### Fixed
+- Bugfix: Check if proxy is set for Jersey 3 client
+
 ## [7.4.2 - 2022-02-25]
 ### Fixed
 - increased slf4j and jersey version in master
