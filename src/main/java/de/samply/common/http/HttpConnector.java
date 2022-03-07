@@ -883,7 +883,7 @@ public class HttpConnector {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setScheme(httpProxyProtocol);
     uriBuilder.setHost(httpProxyUrl);
-    if (httpProxyPort != null) {
+    if (httpProxyPort != null && httpProxyPort.length() > 0) {
       uriBuilder.setPort(new Integer(httpProxyPort));
     }
 
@@ -905,7 +905,7 @@ public class HttpConnector {
     clientConfig.register(JacksonJsonProvider.class);
     clientConfig.register(new BasicCookieStore());
     clientConfig.register(httpClient);
-    if (httpProxyUrl != null) {
+    if (httpProxyUrl != null && httpProxyUrl.length() > 0) {
       clientConfig.property(ClientProperties.PROXY_URI, buildHttpProxyUrl());
       clientConfig.property(ClientProperties.PROXY_USERNAME, httpProxyUsername);
       clientConfig.property(ClientProperties.PROXY_PASSWORD, httpProxyPassword);
