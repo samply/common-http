@@ -50,7 +50,7 @@
     </repository>
   </distributionManagement>
   <properties>
-    <common-config.version>5.1.0</common-config.version>
+    <common-config.version>5.2.0</common-config.version>
     <version.jersey>3.0.4</version.jersey>
     <commons-configuration.version>1.10</commons-configuration.version>
 
