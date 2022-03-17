@@ -432,7 +432,9 @@ public class HttpConnector {
     httpProxyProtocol = config.getHttp().getUrl().getProtocol();
     httpsProxyProtocol = config.getHttps().getUrl().getProtocol();
 
-    if (config.getNoProxyHosts() != null && !config.getNoProxyHosts().getHost().isEmpty()) {
+    if (config.getBypassProxyOnPrivateNetwork() != null) {
+      bypassProxyForPrivateNetworks = config.getBypassProxyOnPrivateNetwork();
+    } else if (config.getNoProxyHosts() != null && !config.getNoProxyHosts().getHost().isEmpty()) {
       bypassProxyForPrivateNetworks = true;
     }
 
@@ -464,15 +466,15 @@ public class HttpConnector {
 
       }
 
-      if (config.getProxy().getNoProxyHosts() != null
+      if (config.getProxy().getBypassProxyOnPrivateNetwork() != null) {
+        bypassProxyForPrivateNetworks = config.getProxy().getBypassProxyOnPrivateNetwork();
+      } else if (config.getProxy().getNoProxyHosts() != null
           && !config.getProxy().getNoProxyHosts().getHost().isEmpty()) {
         bypassProxyForPrivateNetworks = true;
       }
     }
 
   }
-
-
 
   /**
    * Initializes the clients If no https proxy is configured, both clients are the same.
