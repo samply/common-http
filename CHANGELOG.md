@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.5.0 - 2026-11-25]
+### Changed
+- Upgraded Jersey from 3.0.4 to 3.0.18
+- Pinned jackson-core and jackson-databind to 2.18.12 (Jersey 3.0.4 brought in 2.13.0)
+- Pinned commons-codec to 1.23.0 (previously 1.11 via httpclient)
+- Replaced `commons-configuration:commons-configuration` 1.10 with
+  `org.apache.commons:commons-configuration2` 2.15.1. The constructor `HttpConnector(Configuration)`
+  now takes `org.apache.commons.configuration2.Configuration` (**breaking**)
+
 ## [7.4.4 - 2022-03-17]
 ### Added
 - Check bypass proxy on private networks
